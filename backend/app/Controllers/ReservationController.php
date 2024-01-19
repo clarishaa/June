@@ -108,34 +108,59 @@ class ReservationController extends ResourceController
             return $this->response->setStatusCode(404)->setJSON(['msg' => 'Schedule not found']);
         }
     }
+    // public function bookAppointment()
+    // {
+    //     $scheduleModel = new ReserveModel();
+
+    //     $appointmentId = $this->request->getPost('appointment');
+    //     $appointmentStatus = $this->request->getPost('status');
+
+    //     $appointment = $scheduleModel->find($appointmentId);
+
+    //     try {
+    //         if ($appointment) {
+    //             if (array_key_exists('status', $appointment)) {
+    //                 if (strtolower($appointment['status']) === 'available') {
+    //                     $appointment['status'] = 'booked';
+    //                     $scheduleModel->save($appointment);
+
+    //                     return $this->response->setStatusCode(200)->setJSON(['success' => true]);
+    //                 } else {
+    //                     return $this->response->setStatusCode(400)->setJSON(['success' => false, 'error' => 'Invalid appointment or already booked!']);
+    //                 }
+    //             } else {
+    //                 return $this->response->setStatusCode(400)->setJSON(['success' => false, 'error' => 'Status key not found in appointment data']);
+    //             }
+    //         } else {
+    //             return $this->response->setStatusCode(404)->setJSON(['success' => false, 'error' => 'Appointment not found']);
+    //         }
+    //     } catch (\Exception $e) {
+    //         return $this->response->setStatusCode(500)->setJSON(['success' => false, 'error' => $e->getMessage()]);
+    //     }
+    // }
+
     public function bookAppointment()
     {
         $scheduleModel = new ReserveModel();
-
         $appointmentId = $this->request->getPost('appointment');
-        $appointmentStatus = $this->request->getPost('status');
-
-        $appointment = $scheduleModel->find($appointmentId);
-
+    
         try {
+            $appointment = $scheduleModel->find($appointmentId);
+    
             if ($appointment) {
-                if (array_key_exists('status', $appointment)) {
-                    if (strtolower($appointment['status']) === 'available') {
-                        $appointment['status'] = 'booked';
-                        $scheduleModel->save($appointment);
-
-                        return $this->response->setStatusCode(200)->setJSON(['success' => true]);
-                    } else {
-                        return $this->response->setStatusCode(400)->setJSON(['success' => false, 'error' => 'Invalid appointment or already booked!']);
-                    }
+                if ($appointment['status'] === 'Available') {
+                    $appointment['status'] = 'Booked';
+                    $scheduleModel->update($appointmentId, $appointment);
+    
+                    return $this->respond(['success' => true, 'msg' => 'Appointment booked successfully']);
                 } else {
-                    return $this->response->setStatusCode(400)->setJSON(['success' => false, 'error' => 'Status key not found in appointment data']);
+                    return $this->fail('Invalid appointment or already booked!', 400);
                 }
             } else {
-                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'error' => 'Appointment not found']);
+                return $this->fail('Appointment not found', 404);
             }
         } catch (\Exception $e) {
-            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'error' => $e->getMessage()]);
+            return $this->fail($e->getMessage(), 500);
         }
     }
 }
