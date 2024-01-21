@@ -58,6 +58,7 @@ export default {
           console.log('Login successful. Token:', response.data.token);
           // Set authentication flag or token in local storage
           localStorage.setItem('authenticated', 'true');
+          sessionStorage.setItem("user_id", response.data.user_id);
           this.$router.push('/communicate');
         } else {
           this.errorMsg = 'Invalid credentials';

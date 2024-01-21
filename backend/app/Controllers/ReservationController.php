@@ -9,6 +9,8 @@ use CodeIgniter\API\ResponseTrait;
 use App\Models\MainModel;
 use App\Models\FaqModel;
 use App\Models\ReserveModel;
+use App\Models\AppointmentModel;
+
 
 class ReservationController extends ResourceController
 {
@@ -140,27 +142,43 @@ class ReservationController extends ResourceController
     // }
 
     public function bookAppointment()
-    {
-        $scheduleModel = new ReserveModel();
-        $appointmentId = $this->request->getPost('appointment');
-    
-        try {
-            $appointment = $scheduleModel->find($appointmentId);
-    
-            if ($appointment) {
-                if ($appointment['status'] === 'Available') {
-                    $appointment['status'] = 'Booked';
-                    $scheduleModel->update($appointmentId, $appointment);
-    
-                    return $this->respond(['success' => true, 'msg' => 'Appointment booked successfully']);
-                } else {
-                    return $this->fail('Invalid appointment or already booked!', 400);
-                }
-            } else {
-                return $this->fail('Appointment not found', 404);
-            }
-        } catch (\Exception $e) {
-            return $this->fail($e->getMessage(), 500);
+{
+    try {
+        $appointmentData = $this->request->getJSON();
+
+        // Ensure that the 'appointment' key exists in the JSON payload
+        if (!isset($appointmentData->appointment)) {
+            return $this->respond(['error' => 'Invalid JSON payload. Missing appointment field.'], 400);
         }
+
+        $appointmentId = $appointmentData->appointment;
+        $data = [
+             'userid' =>  $appointmentData->user_id,
+        'reason' =>  $appointmentData->reason,
+        'appointmentid' =>  $appointmentData->appointment,
+
+        ];
+       
+        $scheduleModel = new ReserveModel();
+        $appointment = $scheduleModel->find($appointmentId);
+
+        if (!$appointment) {
+            return $this->respond(['error' => 'Appointment not found'], 404);
+        }
+
+        if ($appointment['status'] !== 'Available') {
+            return $this->respond(['error' => 'Invalid appointment or already booked!'], 400);
+        }
+
+        // Update the appointment status to 'Booked'
+        $appointment['status'] = 'Booked';
+        $scheduleModel->update($appointmentId, $appointment);
+        $appointmentmodel = new AppointmentModel();
+        $appointmentmodel->insert($data);
+        return $this->respond(['success' => true, 'msg' => 'Appointment booked successfully']);
+    } catch (\Exception $e) {
+        return $this->respond(['error' => $e->getMessage()], 500);
     }
+}
+
 }
